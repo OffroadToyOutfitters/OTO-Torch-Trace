@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<!--
+  OTO Torch Trace
+  Copyright (c) 2025 Off Road Toy Outfitters (offroadtoyoutfitters.com)
+  MIT License — free to use, share, and modify with attribution.
+  https://github.com/offroadtoyoutfitters/oto-torch-trace
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OTO Torch Trace</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;400;600;700&display=swap');
+
+  :root {
+    --bg: #0a0a0a;
+    --surface: #111111;
+    --surface2: #1a1a1a;
+    --border: #2a2a2a;
+    --accent: #e03030;
+    --accent2: #ff6b35;
+    --text: #e8e8e8;
+    --muted: #666;
+    --green: #00c96e;
+    --yellow: #f5c518;
+    --blue: #5b9bd5;
+    --mono: 'Share Tech Mono', monospace;
+    --sans: 'Barlow', sans-serif;
+    --console-h: 0px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    height: 100vh;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    overflow: hidden;
+  }
+
+  /* ── Header ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .logo {
+    font-family: var(--mono);
+    font-size: 16px;
+    color: var(--accent);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .logo span { color: var(--text); }
+
+  .conn-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+    flex-wrap: wrap;
+  }
+
+  .conn-bar input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 5px 10px;
+    border-radius: 4px;
+    width: 160px;
+  }
+
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--muted);
+    flex-shrink: 0;
+  }
+  .status-dot.connected { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .status-dot.error { background: var(--accent); }
+  .status-dot.demo { background: var(--yellow); box-shadow: 0 0 6px var(--yellow); }
+
+  .status-text { font-family: var(--mono); font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+  .hbtn {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 5px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1px solid;
+    background: none;
+    transition: all 0.15s;
+    white-space: nowrap;
+    letter-spacing: 0.5px;
+  }
+  .hbtn-green  { border-color: var(--green);  color: var(--green);  }
+  .hbtn-green:hover  { background: #001a0e; }
+  .hbtn-yellow { border-color: var(--yellow); color: var(--yellow); }
+  .hbtn-yellow:hover { background: #1a1400; }
+  .hbtn-muted  { border-color: #333; color: #555; }
+  .hbtn-muted:hover  { border-color: var(--yellow); color: var(--yellow); }
+  .hbtn.active { background: #1a1400; border-color: var(--yellow); color: var(--yellow); }
+
+  /* ── Main layout ── */
+  .main {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    overflow: hidden;
+    height: calc(100vh - 49px - var(--console-h));
+    transition: height 0.2s;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  .sidebar::-webkit-scrollbar { width: 3px; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border); }
+
+  .section {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .section-title {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  /* ── Position display ── */
+  .pos-display { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .pos-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 8px 10px;
+  }
+  .pos-label { font-family: var(--mono); font-size: 9px; color: var(--muted); margin-bottom: 2px; }
+  .pos-value { font-family: var(--mono); font-size: 20px; color: var(--green); letter-spacing: -1px; }
+
+  /* ── Buttons ── */
+  .btn {
+    display: block; width: 100%;
+    padding: 10px; border: none; border-radius: 4px;
+    font-family: var(--mono); font-size: 12px;
+    letter-spacing: 1px; cursor: pointer;
+    transition: all 0.15s; text-align: center;
+    text-transform: uppercase; margin-bottom: 6px;
+  }
+  .btn:last-child { margin-bottom: 0; }
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+
+  .btn-plot {
+    background: var(--accent); color: white;
+    font-size: 14px; padding: 14px; letter-spacing: 3px;
+  }
+  .btn-plot:hover:not(:disabled) { background: #c02828; }
+
+  .btn-send {
+    background: var(--green); color: #000; font-weight: 700;
+    padding: 12px; letter-spacing: 2px;
+  }
+  .btn-send:hover:not(:disabled) { background: #00a85b; }
+
+  .btn-outline {
+    background: var(--surface2); color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-outline:hover:not(:disabled) { border-color: var(--accent2); color: var(--accent2); }
+
+  .btn-warn {
+    background: var(--surface2); color: var(--yellow);
+    border: 1px solid #3a3000;
+  }
+  .btn-warn:hover:not(:disabled) { border-color: var(--yellow); }
+
+  .btn-danger {
+    background: var(--surface2); color: var(--accent);
+    border: 1px solid #3a0000; font-size: 11px; padding: 7px;
+  }
+  .btn-danger:hover:not(:disabled) { border-color: var(--accent); }
+
+  /* ── Points list ── */
+  .points-header {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px 6px;
+    flex-shrink: 0;
+  }
+  .points-list { flex: 1; overflow-y: auto; padding: 0 14px 8px; min-height: 60px; }
+  .points-list::-webkit-scrollbar { width: 3px; }
+  .points-list::-webkit-scrollbar-thumb { background: var(--border); }
+
+  .point-item {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 0; border-bottom: 1px solid #111;
+  }
+  .point-num { font-family: var(--mono); font-size: 10px; color: var(--muted); min-width: 22px; }
+  .point-coords { font-family: var(--mono); font-size: 11px; flex: 1; }
+  .point-coords .cx { color: var(--blue); }
+  .point-coords .cy { color: var(--accent2); }
+  .point-del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 14px; padding: 0 4px; border-radius: 2px; }
+  .point-del:hover { color: var(--accent); }
+
+  .no-points { font-family: var(--mono); font-size: 11px; color: var(--muted); text-align: center; padding: 20px 0; }
+  .pt-count { font-family: var(--mono); font-size: 10px; color: var(--muted); }
+  .pt-count span { color: var(--accent2); }
+  .clear-btn {
+    background: none; border: 1px solid #2a1a1a; color: #554444;
+    font-family: var(--mono); font-size: 10px; padding: 3px 8px;
+    border-radius: 3px; cursor: pointer; transition: all 0.15s;
+  }
+  .clear-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── Path options ── */
+  .radio-group { display: flex; gap: 5px; }
+  .radio-btn {
+    flex: 1; padding: 7px 4px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 3px; font-family: var(--mono); font-size: 11px;
+    color: var(--muted); cursor: pointer; text-align: center; transition: all 0.15s;
+  }
+  .radio-btn.active { border-color: var(--accent2); color: var(--accent2); background: #1a1208; }
+
+  .opt-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+  .opt-row label { font-family: var(--mono); font-size: 10px; color: var(--muted); white-space: nowrap; }
+  .opt-row input[type=number] {
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); font-family: var(--mono); font-size: 12px;
+    padding: 5px 8px; border-radius: 3px; flex: 1;
+  }
+
+  .toggle-row { display: flex; align-items: center; gap: 8px; cursor: pointer; margin-top: 8px; }
+  .toggle {
+    width: 32px; height: 18px; background: var(--surface2);
+    border: 1px solid var(--border); border-radius: 9px;
+    position: relative; flex-shrink: 0; transition: all 0.2s;
+  }
+  .toggle::after {
+    content: ''; position: absolute; width: 12px; height: 12px;
+    background: var(--muted); border-radius: 50%;
+    top: 2px; left: 2px; transition: all 0.2s;
+  }
+  .toggle.on { background: #001a0e; border-color: var(--green); }
+  .toggle.on::after { left: 16px; background: var(--green); }
+  .toggle-label { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+  /* ── Jog controls ── */
+  .step-group { display: flex; gap: 4px; }
+  .step-btn {
+    flex: 1; padding: 5px 2px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 3px; font-family: var(--mono); font-size: 10px;
+    color: var(--muted); cursor: pointer; text-align: center; transition: all 0.1s;
+  }
+  .step-btn.active { border-color: var(--accent2); color: var(--accent2); background: #1a1208; }
+  .step-btn:hover { border-color: var(--text); color: var(--text); }
+
+  .dpad {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 4px; max-width: 150px; margin: 8px auto 6px;
+  }
+  .jbtn {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 4px; color: var(--text); font-size: 16px;
+    cursor: pointer; padding: 7px; aspect-ratio: 1;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.1s; user-select: none;
+  }
+  .jbtn:hover { border-color: var(--accent2); color: var(--accent2); background: #1a1208; }
+  .jbtn:active { transform: scale(0.9); }
+  .jbtn.home { color: var(--muted); font-size: 14px; }
+  .jbtn.home:hover { border-color: var(--green); color: var(--green); background: #001a0e; }
+
+  /* ── Canvas ── */
+  .canvas-area {
+    position: relative; background: #080808; overflow: hidden;
+  }
+  canvas { position: absolute; top: 0; left: 0; }
+
+  .canvas-hint {
+    position: absolute; top: 10px; right: 12px;
+    font-family: var(--mono); font-size: 10px; color: #333;
+    pointer-events: none;
+  }
+
+  /* ── OpenBuilds connection panel ── */
+  .ob-panel {
+    background: #0a0f0a;
+    border: 1px solid #1a3a1a;
+    border-radius: 6px;
+    padding: 10px;
+    margin-bottom: 8px;
+  }
+  .ob-title {
+    font-family: var(--mono); font-size: 9px;
+    color: var(--green); letter-spacing: 2px;
+    text-transform: uppercase; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .ob-status { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 6px; text-align: center; }
+
+  /* ── Dev Console ── */
+  #devConsole {
+    display: none; flex-direction: column;
+    background: #050505; border-top: 1px solid #1a1a00;
+    height: 200px;
+  }
+  #devConsole.visible { display: flex; }
+
+  .con-header {
+    display: flex; align-items: center; gap: 8px;
+    padding: 5px 12px; background: #0a0a00;
+    border-bottom: 1px solid #1a1a00; flex-shrink: 0;
+  }
+  .con-title { font-family: var(--mono); font-size: 10px; color: var(--yellow); letter-spacing: 2px; }
+  .con-tag { font-family: var(--mono); font-size: 9px; padding: 1px 5px; border-radius: 2px; font-weight: 600; }
+  .con-tag.tx  { background: #1a1a3a; color: #7b9fff; }
+  .con-tag.rx  { background: #0a2a0a; color: var(--green); }
+  .con-tag.sys { background: #2a2000; color: var(--yellow); }
+  .con-tag.err { background: #2a0a0a; color: var(--accent); }
+  .con-actions { margin-left: auto; display: flex; gap: 6px; }
+  .con-btn {
+    background: none; border: 1px solid #222; color: #555;
+    font-family: var(--mono); font-size: 10px; padding: 2px 7px;
+    border-radius: 2px; cursor: pointer; transition: all 0.15s;
+  }
+  .con-btn:hover { border-color: var(--yellow); color: var(--yellow); }
+
+  .con-send {
+    display: flex; gap: 5px; padding: 5px 12px;
+    background: #080800; border-bottom: 1px solid #1a1a00; flex-shrink: 0;
+  }
+  .con-input {
+    flex: 1; background: #0f0f00; border: 1px solid #2a2a00;
+    color: var(--green); font-family: var(--mono); font-size: 11px;
+    padding: 4px 8px; border-radius: 3px; outline: none;
+  }
+  .con-input:focus { border-color: var(--yellow); }
+  .con-send-btn {
+    background: #1a1a00; border: 1px solid #3a3a00; color: var(--yellow);
+    font-family: var(--mono); font-size: 10px; padding: 4px 12px;
+    border-radius: 3px; cursor: pointer;
+  }
+
+  .con-log {
+    flex: 1; overflow-y: auto; padding: 6px 12px;
+    font-family: var(--mono); font-size: 10px; line-height: 1.8;
+  }
+  .con-log::-webkit-scrollbar { width: 3px; }
+  .con-log::-webkit-scrollbar-thumb { background: #222; }
+
+  .log-line { display: flex; gap: 8px; align-items: baseline; }
+  .log-time { color: #2a2a2a; min-width: 65px; font-size: 9px; }
+  .log-dir { min-width: 28px; font-size: 9px; font-weight: 600; }
+  .log-dir.tx  { color: #7b9fff; }
+  .log-dir.rx  { color: var(--green); }
+  .log-dir.sys { color: var(--yellow); }
+  .log-dir.err { color: var(--accent); }
+  .log-msg { color: #888; word-break: break-all; flex: 1; }
+  .log-msg.rx  { color: #6a9a6a; }
+  .log-msg.tx  { color: #6a7aaa; }
+  .log-msg.sys { color: #9a8a40; }
+  .log-msg.err { color: #aa4444; }
+
+  /* ── G-code preview strip ── */
+  .gcode-strip {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: rgba(0,0,0,0.85); border-top: 1px solid var(--border);
+    padding: 8px 14px; font-family: var(--mono); font-size: 10px;
+    color: #555; max-height: 100px; overflow-y: auto; display: none;
+  }
+  .gcode-strip.visible { display: block; }
+  .gcode-strip .gl { color: var(--green); }
+  .gcode-strip .gc { color: #333; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">OTO <span>/ Torch Trace</span></div>
+  <div class="conn-bar">
+    <div class="status-dot" id="dot"></div>
+    <span class="status-text" id="connStatus">Not connected</span>
+    <input type="text" id="obHost" value="localhost" placeholder="OpenBuilds host" title="IP or hostname running OpenBuilds CONTROL">
+    <button class="hbtn hbtn-green" id="connectBtn" onclick="toggleConnect()">Connect</button>
+    <button class="hbtn hbtn-yellow" id="demoBtn" onclick="toggleDemo()">⚡ Demo</button>
+    <button class="hbtn hbtn-muted" id="devBtn" onclick="toggleDev()">{ } Dev</button>
+  </div>
+</header>
+
+<div class="main">
+  <div class="sidebar">
+
+    <!-- OpenBuilds status -->
+    <div class="section">
+      <div class="section-title">OpenBuilds CONTROL</div>
+      <div class="ob-panel">
+        <div class="ob-title">
+          <div class="status-dot" id="obDot"></div>
+          OpenBuilds API
+        </div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.6;">
+          Make sure OpenBuilds CONTROL is open and connected to your machine, then click Connect above.
+        </div>
+        <div class="ob-status" id="obStatus">Waiting for connection...</div>
+      </div>
+    </div>
+
+    <!-- Live position -->
+    <div class="section">
+      <div class="section-title">Live Position</div>
+      <div class="pos-display">
+        <div class="pos-box">
+          <div class="pos-label">X (mm)</div>
+          <div class="pos-value" id="posX">—</div>
+        </div>
+        <div class="pos-box">
+          <div class="pos-label">Y (mm)</div>
+          <div class="pos-value" id="posY">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Jog controls -->
+    <div class="section">
+      <div class="section-title">Jog</div>
+      <div style="margin-bottom:6px;">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-bottom:4px;">STEP (mm)</div>
+        <div class="step-group">
+          <button class="step-btn active" id="step-0.1"  onclick="setStep(0.1)">0.1</button>
+          <button class="step-btn"        id="step-1"    onclick="setStep(1)">1</button>
+          <button class="step-btn"        id="step-10"   onclick="setStep(10)">10</button>
+          <button class="step-btn"        id="step-50"   onclick="setStep(50)">50</button>
+          <button class="step-btn"        id="step-100"  onclick="setStep(100)">100</button>
+        </div>
+      </div>
+      <div style="margin-bottom:6px;">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-bottom:4px;">SPEED (mm/min)</div>
+        <div class="step-group">
+          <button class="step-btn"        id="feed-500"  onclick="setFeed(500)">500</button>
+          <button class="step-btn active" id="feed-1000" onclick="setFeed(1000)">1000</button>
+          <button class="step-btn"        id="feed-3000" onclick="setFeed(3000)">3000</button>
+          <button class="step-btn"        id="feed-6000" onclick="setFeed(6000)">6000</button>
+        </div>
+      </div>
+      <div class="dpad">
+        <div></div>
+        <button class="jbtn" onclick="jog(0,1)"  title="Y+ (↑)">▲</button>
+        <div></div>
+        <button class="jbtn" onclick="jog(-1,0)" title="X- (←)">◀</button>
+        <button class="jbtn home" onclick="obCmd('$H')" title="Home">⌂</button>
+        <button class="jbtn" onclick="jog(1,0)"  title="X+ (→)">▶</button>
+        <div></div>
+        <button class="jbtn" onclick="jog(0,-1)" title="Y- (↓)">▼</button>
+        <div></div>
+      </div>
+      <button class="btn btn-danger" onclick="obCmd('\x85')" style="margin-bottom:0">■ Stop / Cancel Jog</button>
+    </div>
+
+    <!-- Plot controls -->
+    <div class="section">
+      <button class="btn btn-plot" id="plotBtn" onclick="plotPoint()" disabled>⊕ Plot Point</button>
+      <button class="btn btn-outline" onclick="undoLast()">↩ Undo Last Point</button>
+    </div>
+
+    <!-- Points list -->
+    <div class="points-header">
+      <div class="section-title" style="margin:0">Points</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="pt-count"><span id="ptCount">0</span> pts</span>
+        <button class="clear-btn" onclick="clearAll()">CLEAR</button>
+      </div>
+    </div>
+    <div class="points-list" id="pointsList">
+      <div class="no-points" id="noPoints">No points yet.<br>Connect and jog to position,<br>then Plot Point.</div>
+    </div>
+
+    <!-- Path options -->
+    <div class="section">
+      <div class="section-title">Path Options</div>
+      <div class="radio-group">
+        <div class="radio-btn active" id="mode-lines"  onclick="setMode('lines')">Lines</div>
+        <div class="radio-btn"        id="mode-spline" onclick="setMode('spline')">Spline</div>
+        <div class="radio-btn"        id="mode-fillet" onclick="setMode('fillet')">Fillet</div>
+      </div>
+      <div class="opt-row" id="filletRow" style="opacity:0.3;transition:opacity 0.2s">
+        <label>Radius (mm)</label>
+        <input type="number" id="filletR" value="5" min="0.5" max="200" step="0.5" oninput="drawCanvas()">
+      </div>
+      <div class="toggle-row" onclick="toggleClose()">
+        <div class="toggle" id="closeToggle"></div>
+        <span class="toggle-label">Close path</span>
+      </div>
+    </div>
+
+    <!-- Export -->
+    <div class="section">
+      <div class="section-title">Export</div>
+      <div class="opt-row" style="margin-top:0;margin-bottom:8px;">
+        <label>Feed (mm/min)</label>
+        <input type="number" id="feedRate" value="1000" min="100" max="10000" step="100">
+      </div>
+      <button class="btn btn-send"    id="sendObBtn" onclick="sendToOpenBuilds()" disabled>▶ Send to OpenBuilds</button>
+      <button class="btn btn-outline" id="genBtn"    onclick="generateGcode()"    disabled>↓ Download G-Code</button>
+      <button class="btn btn-outline" id="dxfBtn"    onclick="generateDxf()"     disabled style="border-color:var(--blue);color:var(--blue)">↓ Export DXF (Fusion 360)</button>
+    </div>
+
+  </div><!-- /sidebar -->
+
+  <!-- Canvas -->
+  <div class="canvas-area">
+    <canvas id="canvas"></canvas>
+    <div class="canvas-hint">Scroll to zoom · Drag to pan · Space = plot point</div>
+    <div class="gcode-strip" id="gcodeStrip"></div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- Dev Console -->
+<div id="devConsole">
+  <div class="con-header">
+    <span class="con-title">{ } Dev Console</span>
+    <span class="con-tag tx">TX</span>
+    <span class="con-tag rx">RX</span>
+    <span class="con-tag sys">SYS</span>
+    <span class="con-tag err">ERR</span>
+    <div class="con-actions">
+      <button class="con-btn" onclick="copyLog()">⎘ Copy</button>
+      <button class="con-btn" onclick="clearLog()">✕ Clear</button>
+    </div>
+  </div>
+  <div class="con-send">
+    <input class="con-input" id="conInput" placeholder="Raw command (e.g. $I, $X, $SLP)" onkeydown="if(event.key==='Enter')sendRaw()">
+    <button class="con-send-btn" onclick="sendRaw()">SEND ↵</button>
+  </div>
+  <div class="con-log" id="conLog"></div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// OTO Torch Trace
+// Copyright (c) 2025 Off Road Toy Outfitters
+// MIT License — https://github.com/offroadtoyoutfitters/oto-torch-trace
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── State ────────────────────────────────────────────────────────────────────
+let connected = false;
+let demoActive = false;
+let devOpen = false;
+let showPoll = false;
+let points = [];
+let mode = 'lines';
+let closePath = false;
+let curX = null, curY = null;
+let pollTimer = null;
+let demoTimer = null;
+let demoAngle = 0;
+let demoShapeIdx = 0;
+let jogStep = 0.1;
+let jogFeed = 1000;
+let logEntries = [];
+
+// OpenBuilds CONTROL API
+// Runs locally on port 3001 — our app talks to it via fetch
+function getObBase() {
+  const host = document.getElementById('obHost').value.trim() || 'localhost';
+  return `http://${host}:3001`;
+}
+
+// ── Dev Console ───────────────────────────────────────────────────────────────
+function devLog(dir, msg) {
+  const t = new Date();
+  const ts = `${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}:${String(t.getSeconds()).padStart(2,'0')}.${String(t.getMilliseconds()).padStart(3,'0')}`;
+  logEntries.push(`[${ts}] ${dir.toUpperCase().padEnd(4)} ${msg}`);
+  const log = document.getElementById('conLog');
+  const line = document.createElement('div');
+  line.className = 'log-line';
+  line.innerHTML = `<span class="log-time">${ts}</span><span class="log-dir ${dir}">${dir.toUpperCase()}</span><span class="log-msg ${dir}">${esc(msg)}</span>`;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+  while (log.children.length > 500) log.removeChild(log.firstChild);
+}
+
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function toggleDev() {
+  devOpen = !devOpen;
+  document.getElementById('devConsole').classList.toggle('visible', devOpen);
+  document.getElementById('devBtn').classList.toggle('active', devOpen);
+  document.documentElement.style.setProperty('--console-h', devOpen ? '200px' : '0px');
+  resizeCanvas();
+}
+function clearLog() { document.getElementById('conLog').innerHTML = ''; logEntries = []; }
+function copyLog() {
+  navigator.clipboard.writeText(logEntries.join('\n')).then(() => {
+    const b = event.target; b.textContent = '✓ Copied!';
+    setTimeout(() => b.textContent = '⎘ Copy', 1500);
+  });
+}
+function sendRaw() {
+  const inp = document.getElementById('conInput');
+  const cmd = inp.value.trim();
+  if (!cmd || !connected) { if(!connected) devLog('err','Not connected'); return; }
+  obCmd(cmd);
+  inp.value = '';
+  inp.focus();
+}
+
+// ── OpenBuilds API ────────────────────────────────────────────────────────────
+// OpenBuilds CONTROL exposes:
+//   GET  :3001/             - status/version info
+//   POST :3001/upload       - inject a gcode file
+//   GET  :3001/status       - machine status (position, state)
+//   POST :3001/command      - send a single gcode/grbl command
+// The socket.io interface on :3001 also broadcasts machine state in real time.
+
+async function obFetch(path, opts = {}) {
+  try {
+    const resp = await fetch(getObBase() + path, { ...opts, signal: AbortSignal.timeout(3000) });
+    const text = await resp.text();
+    return text;
+  } catch(e) {
+    devLog('err', `${path}: ${e.message}`);
+    return null;
+  }
+}
+
+async function obCmd(cmd) {
+  if (!connected && !demoActive) return;
+  if (demoActive) { devLog('tx', `[DEMO] ${cmd}`); return; }
+  devLog('tx', cmd);
+  // OpenBuilds accepts commands via POST to /command with body {command: "..."}
+  const result = await obFetch('/command', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ command: cmd })
+  });
+  if (result) devLog('rx', result);
+}
+
+async function toggleConnect() {
+  if (connected) { disconnect(); return; }
+  const base = getObBase();
+  setStatus('connecting', 'Connecting...');
+  devLog('sys', `Connecting to OpenBuilds CONTROL at ${base}`);
+
+  // Try to reach OpenBuilds status endpoint
+  const result = await obFetch('/');
+  if (result !== null) {
+    connected = true;
+    setStatus('connected', `OpenBuilds @ ${document.getElementById('obHost').value || 'localhost'}`);
+    document.getElementById('connectBtn').textContent = 'Disconnect';
+    document.getElementById('obDot').classList.add('connected');
+    document.getElementById('obStatus').textContent = '✓ Connected to OpenBuilds CONTROL';
+    devLog('sys', `Connected! Response: ${result.substring(0,100)}`);
+    enableControls(true);
+    startPolling();
+  } else {
+    setStatus('error', 'Cannot reach OpenBuilds');
+    document.getElementById('obStatus').textContent = '✗ OpenBuilds not found — is it running?';
+    devLog('err', 'Could not connect. Make sure OpenBuilds CONTROL is open and connected to your machine.');
+  }
+}
+
+function disconnect() {
+  connected = false;
+  clearInterval(pollTimer);
+  document.getElementById('connectBtn').textContent = 'Connect';
+  document.getElementById('obDot').className = 'status-dot';
+  document.getElementById('obStatus').textContent = 'Disconnected';
+  setStatus('disconnected', 'Not connected');
+  enableControls(false);
+  curX = null; curY = null;
+  document.getElementById('posX').textContent = '—';
+  document.getElementById('posY').textContent = '—';
+  drawCanvas();
+}
+
+function startPolling() {
+  pollTimer = setInterval(async () => {
+    if (!connected) return;
+    // Poll OpenBuilds for machine position via /status endpoint
+    const result = await obFetch('/status');
+    if (result) {
+      try {
+        const data = JSON.parse(result);
+        // OpenBuilds returns {x, y, z, state, ...}
+        if (data.x !== undefined && data.y !== undefined) {
+          curX = parseFloat(data.x);
+          curY = parseFloat(data.y);
+          document.getElementById('posX').textContent = curX.toFixed(3);
+          document.getElementById('posY').textContent = curY.toFixed(3);
+          drawCanvas();
+        }
+        // Also check for GRBL status string format
+        if (typeof result === 'string') {
+          const m = result.match(/[MW]Pos:([-\d.]+),([-\d.]+)/);
+          if (m) {
+            curX = parseFloat(m[1]);
+            curY = parseFloat(m[2]);
+            document.getElementById('posX').textContent = curX.toFixed(3);
+            document.getElementById('posY').textContent = curY.toFixed(3);
+            drawCanvas();
+          }
+        }
+        if (showPoll) devLog('rx', result.substring(0, 80));
+      } catch(e) {
+        // Non-JSON response — try regex
+        const m = result.match(/[MW]Pos:([-\d.]+),([-\d.]+)/);
+        if (m) {
+          curX = parseFloat(m[1]);
+          curY = parseFloat(m[2]);
+          document.getElementById('posX').textContent = curX.toFixed(3);
+          document.getElementById('posY').textContent = curY.toFixed(3);
+          drawCanvas();
+        }
+      }
+    }
+  }, 500);
+}
+
+// Send G-code to OpenBuilds via the documented /upload API
+async function sendToOpenBuilds() {
+  if (!connected || points.length < 2) return;
+  const gcode = buildGcode();
+  devLog('sys', `Sending ${gcode.split('\n').length} lines to OpenBuilds CONTROL...`);
+
+  const blob = new Blob([gcode], { type: 'text/plain' });
+  const fd = new FormData();
+  fd.append('data', blob, 'oto-digitizer.nc');
+
+  try {
+    const resp = await fetch(`${getObBase()}/upload`, {
+      method: 'POST', body: fd,
+      signal: AbortSignal.timeout(5000)
+    });
+    const text = await resp.text();
+    devLog('rx', text);
+    devLog('sys', '✓ G-code sent to OpenBuilds! Press Run in OpenBuilds CONTROL to cut.');
+    showGcodeStrip(gcode);
+  } catch(e) {
+    devLog('err', `Upload failed: ${e.message}`);
+  }
+}
+
+// ── Status helpers ────────────────────────────────────────────────────────────
+function setStatus(state, text) {
+  const dot = document.getElementById('dot');
+  dot.className = 'status-dot' + (state === 'connected' ? ' connected' : state === 'error' ? ' error' : state === 'demo' ? ' demo' : '');
+  document.getElementById('connStatus').textContent = text;
+}
+
+function enableControls(on) {
+  document.getElementById('plotBtn').disabled = !on;
+  document.getElementById('sendObBtn').disabled = !on || points.length < 2;
+  document.getElementById('genBtn').disabled = points.length < 2;
+  document.getElementById('dxfBtn').disabled = points.length < 2;
+}
+
+// ── Demo Mode ─────────────────────────────────────────────────────────────────
+const demoShapes = [
+  { name: 'Circle',      fn: t => ({ x: Math.cos(t)*50,    y: Math.sin(t)*50 }) },
+  { name: 'Square',      fn: t => { const s=(t%(Math.PI*2))/(Math.PI*2),side=Math.floor(s*4),st=(s*4)%1,c=[[1,1],[-1,1],[-1,-1],[1,-1]],f=c[side%4],to=c[(side+1)%4]; return {x:(f[0]+(to[0]-f[0])*st)*40,y:(f[1]+(to[1]-f[1])*st)*40}; }},
+  { name: 'Figure-8',    fn: t => ({ x: Math.sin(t)*45,    y: Math.sin(t*2)*22 }) },
+];
+
+function toggleDemo() {
+  if (demoActive) stopDemo(); else startDemo();
+}
+
+function startDemo() {
+  if (connected) { alert('Disconnect from board first.'); return; }
+  demoActive = true; demoAngle = 0;
+  document.getElementById('demoBtn').textContent = '■ Stop Demo';
+  document.getElementById('plotBtn').disabled = false;
+  document.getElementById('connectBtn').disabled = true;
+  document.getElementById('obStatus').textContent = 'Demo mode — no real board';
+  setStatus('demo', 'Demo Mode');
+  showDemoBar();
+  demoTimer = setInterval(() => {
+    demoAngle += 0.03;
+    const p = demoShapes[demoShapeIdx].fn(demoAngle);
+    curX = parseFloat((p.x + (Math.random()-0.5)*0.2).toFixed(3));
+    curY = parseFloat((p.y + (Math.random()-0.5)*0.2).toFixed(3));
+    document.getElementById('posX').textContent = curX.toFixed(3);
+    document.getElementById('posY').textContent = curY.toFixed(3);
+    drawCanvas();
+  }, 50);
+}
+
+function stopDemo() {
+  demoActive = false;
+  clearInterval(demoTimer);
+  curX = null; curY = null;
+  document.getElementById('demoBtn').textContent = '⚡ Demo';
+  document.getElementById('plotBtn').disabled = true;
+  document.getElementById('connectBtn').disabled = false;
+  document.getElementById('posX').textContent = '—';
+  document.getElementById('posY').textContent = '—';
+  document.getElementById('obStatus').textContent = 'Waiting for connection...';
+  setStatus('disconnected', 'Not connected');
+  hideDemoBar();
+  drawCanvas();
+}
+
+function showDemoBar() {
+  let bar = document.getElementById('demoBar');
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = 'demoBar';
+    bar.style.cssText = 'position:fixed;bottom:14px;left:50%;transform:translateX(-50%);background:#111;border:1px solid #f5c518;border-radius:6px;padding:8px 14px;display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:11px;color:#f5c518;z-index:999;';
+    bar.innerHTML = `<span>SHAPE:</span>${demoShapes.map((s,i)=>`<button id="ds${i}" onclick="setDemoShape(${i})" style="background:${i===0?'#2a2000':'transparent'};border:1px solid ${i===0?'#f5c518':'#333'};color:${i===0?'#f5c518':'#555'};font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:3px;cursor:pointer;">${s.name}</button>`).join('')}<span style="color:#333;font-size:10px">| SPACE = plot</span>`;
+    document.body.appendChild(bar);
+  }
+  bar.style.display = 'flex';
+}
+
+function hideDemoBar() {
+  const bar = document.getElementById('demoBar');
+  if (bar) bar.style.display = 'none';
+}
+
+function setDemoShape(i) {
+  demoShapeIdx = i; demoAngle = 0;
+  demoShapes.forEach((_,j) => {
+    const b = document.getElementById(`ds${j}`);
+    if (b) { b.style.background = j===i?'#2a2000':'transparent'; b.style.borderColor = j===i?'#f5c518':'#333'; b.style.color = j===i?'#f5c518':'#555'; }
+  });
+}
+
+// ── Jog ───────────────────────────────────────────────────────────────────────
+function setStep(s) {
+  jogStep = s;
+  document.querySelectorAll('.step-btn[id^="step-"]').forEach(b => b.classList.remove('active'));
+  document.getElementById(`step-${s}`)?.classList.add('active');
+}
+function setFeed(f) {
+  jogFeed = f;
+  document.querySelectorAll('.step-btn[id^="feed-"]').forEach(b => b.classList.remove('active'));
+  document.getElementById(`feed-${f}`)?.classList.add('active');
+}
+function jog(dx, dy) {
+  if (!connected && !demoActive) return;
+  const x = (dx * jogStep).toFixed(3);
+  const y = (dy * jogStep).toFixed(3);
+  obCmd(`$J=G91G21X${x}Y${y}F${jogFeed}`);
+  // In demo mode, also move the cursor manually
+  if (demoActive && curX !== null) {
+    curX = parseFloat((curX + dx * jogStep).toFixed(3));
+    curY = parseFloat((curY + dy * jogStep).toFixed(3));
+    document.getElementById('posX').textContent = curX.toFixed(3);
+    document.getElementById('posY').textContent = curY.toFixed(3);
+    drawCanvas();
+  }
+}
+
+// ── Points ────────────────────────────────────────────────────────────────────
+function plotPoint() {
+  if (curX === null) return;
+  points.push({ x: curX, y: curY });
+  updatePointsList();
+  drawCanvas();
+  updateExportBtns();
+  if (points.length === 1) { panX = -curX * scale; panY = curY * scale; drawCanvas(); }
+}
+
+function undoLast() {
+  if (!points.length) return;
+  points.pop();
+  updatePointsList();
+  drawCanvas();
+  updateExportBtns();
+}
+
+function clearAll() {
+  if (!points.length) return;
+  if (!confirm('Clear all points?')) return;
+  points = [];
+  updatePointsList();
+  drawCanvas();
+  updateExportBtns();
+  document.getElementById('gcodeStrip').classList.remove('visible');
+}
+
+function deletePoint(i) {
+  points.splice(i, 1);
+  updatePointsList();
+  drawCanvas();
+  updateExportBtns();
+}
+
+function updatePointsList() {
+  const list = document.getElementById('pointsList');
+  const np = document.getElementById('noPoints');
+  document.getElementById('ptCount').textContent = points.length;
+  if (!points.length) { list.innerHTML = ''; list.appendChild(np); np.style.display = ''; return; }
+  np.style.display = 'none';
+  list.innerHTML = points.map((p, i) => `
+    <div class="point-item">
+      <span class="point-num">P${i+1}</span>
+      <span class="point-coords"><span class="cx">X${p.x.toFixed(3)}</span> <span class="cy">Y${p.y.toFixed(3)}</span></span>
+      <button class="point-del" onclick="deletePoint(${i})">×</button>
+    </div>`).join('');
+  list.appendChild(np);
+}
+
+function updateExportBtns() {
+  const has = points.length >= 2;
+  document.getElementById('genBtn').disabled = !has;
+  document.getElementById('dxfBtn').disabled = !has;
+  document.getElementById('sendObBtn').disabled = !has || !connected;
+}
+
+// ── Path options ──────────────────────────────────────────────────────────────
+function setMode(m) {
+  mode = m;
+  ['lines','spline','fillet'].forEach(id => document.getElementById(`mode-${id}`).classList.toggle('active', id === m));
+  document.getElementById('filletRow').style.opacity = m === 'fillet' ? '1' : '0.3';
+  drawCanvas();
+}
+
+function toggleClose() {
+  closePath = !closePath;
+  document.getElementById('closeToggle').classList.toggle('on', closePath);
+  drawCanvas();
+}
+
+// ── Canvas ────────────────────────────────────────────────────────────────────
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let scale = 2, panX = 0, panY = 0;
+let dragging = false, dsx, dsy, dpx, dpy;
+
+function resizeCanvas() {
+  const a = canvas.parentElement.getBoundingClientRect();
+  canvas.width = a.width; canvas.height = a.height;
+  drawCanvas();
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  scale *= e.deltaY < 0 ? 1.1 : 0.9;
+  scale = Math.max(0.3, Math.min(60, scale));
+  drawCanvas();
+}, { passive: false });
+
+canvas.addEventListener('mousedown', e => { dragging=true; dsx=e.clientX; dsy=e.clientY; dpx=panX; dpy=panY; });
+canvas.addEventListener('mousemove', e => { if(!dragging) return; panX=dpx+(e.clientX-dsx); panY=dpy+(e.clientY-dsy); drawCanvas(); });
+canvas.addEventListener('mouseup', ()=>dragging=false);
+canvas.addEventListener('mouseleave', ()=>dragging=false);
+
+// Touch support for mobile
+canvas.addEventListener('touchstart', e => { if(e.touches.length===1){dragging=true;dsx=e.touches[0].clientX;dsy=e.touches[0].clientY;dpx=panX;dpy=panY;} }, {passive:true});
+canvas.addEventListener('touchmove',  e => { if(dragging&&e.touches.length===1){panX=dpx+(e.touches[0].clientX-dsx);panY=dpy+(e.touches[0].clientY-dsy);drawCanvas();} }, {passive:true});
+canvas.addEventListener('touchend',   ()=>dragging=false);
+
+function w2s(wx, wy) {
+  return [ canvas.width/2 + panX + wx*scale, canvas.height/2 + panY - wy*scale ];
+}
+
+function drawCanvas() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const W = canvas.width, H = canvas.height;
+
+  // Grid
+  const gmm = scale < 2 ? 50 : scale < 6 ? 20 : scale < 15 ? 10 : 5;
+  ctx.strokeStyle = '#161616'; ctx.lineWidth = 1;
+  const ox = W/2+panX, oy = H/2+panY;
+  const sx = Math.floor((-ox)/scale/gmm)*gmm;
+  const sy = Math.floor((oy-H)/scale/gmm)*gmm;
+  for(let x=sx; x<sx+W/scale+gmm; x+=gmm){const[px]=w2s(x,0);ctx.beginPath();ctx.moveTo(px,0);ctx.lineTo(px,H);ctx.stroke();}
+  for(let y=sy; y<sy+H/scale+gmm; y+=gmm){const[,py]=w2s(0,y);ctx.beginPath();ctx.moveTo(0,py);ctx.lineTo(W,py);ctx.stroke();}
+
+  // Axes
+  ctx.strokeStyle='#2a2a2a'; ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(ox,0);ctx.lineTo(ox,H);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(0,oy);ctx.lineTo(W,oy);ctx.stroke();
+
+  if (!points.length && curX===null) return;
+
+  const allPts = closePath && points.length>1 ? [...points, points[0]] : [...points];
+
+  // Path
+  if (allPts.length > 1) {
+    ctx.strokeStyle='#e03030'; ctx.lineWidth=1.5; ctx.setLineDash([]);
+    ctx.beginPath();
+    if (mode==='spline' && allPts.length>2) {
+      const [sx0,sy0]=w2s(allPts[0].x,allPts[0].y); ctx.moveTo(sx0,sy0);
+      for(let i=1;i<allPts.length-1;i++){
+        const[sx1,sy1]=w2s(allPts[i].x,allPts[i].y);
+        const[sx2,sy2]=w2s(allPts[i+1].x,allPts[i+1].y);
+        ctx.quadraticCurveTo(sx1,sy1,(sx1+sx2)/2,(sy1+sy2)/2);
+      }
+      const[sxL,syL]=w2s(allPts[allPts.length-1].x,allPts[allPts.length-1].y);
+      ctx.lineTo(sxL,syL); ctx.stroke();
+    } else if (mode==='fillet' && allPts.length>2) {
+      const R = parseFloat(document.getElementById('filletR').value)||5;
+      const sR = R*scale;
+      const pts = points; const n = pts.length;
+      if (closePath && n>=3) {
+        const wrapped=[pts[n-1],...pts,pts[0],pts[1]];
+        const[mx,my]=w2s((pts[n-1].x+pts[0].x)/2,(pts[n-1].y+pts[0].y)/2);
+        ctx.moveTo(mx,my);
+        for(let i=1;i<=n;i++){
+          const prev=wrapped[i-1],curr=wrapped[i],next=wrapped[i+1];
+          const[sx1,sy1]=w2s(curr.x,curr.y);
+          const[sx2,sy2]=w2s(next.x,next.y);
+          const d1x=curr.x-prev.x,d1y=curr.y-prev.y,d2x=next.x-curr.x,d2y=next.y-curr.y;
+          const l1=Math.sqrt(d1x*d1x+d1y*d1y),l2=Math.sqrt(d2x*d2x+d2y*d2y);
+          const cr=Math.min(sR,l1*scale*0.45,l2*scale*0.45);
+          ctx.arcTo(sx1,sy1,sx2,sy2,cr);
+        }
+        ctx.closePath(); ctx.stroke();
+      } else {
+        const[sx0,sy0]=w2s(allPts[0].x,allPts[0].y); ctx.moveTo(sx0,sy0);
+        for(let i=1;i<allPts.length;i++){
+          const prev=allPts[i-1],curr=allPts[i],next=allPts[i+1];
+          if(!next){const[sx,sy]=w2s(curr.x,curr.y);ctx.lineTo(sx,sy);continue;}
+          const[sx1,sy1]=w2s(curr.x,curr.y);
+          const[sx2,sy2]=w2s(next.x,next.y);
+          const d1x=curr.x-prev.x,d1y=curr.y-prev.y,d2x=next.x-curr.x,d2y=next.y-curr.y;
+          const l1=Math.sqrt(d1x*d1x+d1y*d1y),l2=Math.sqrt(d2x*d2x+d2y*d2y);
+          const cr=Math.min(sR,l1*scale*0.45,l2*scale*0.45);
+          ctx.arcTo(sx1,sy1,sx2,sy2,cr);
+        }
+        const[sxF,syF]=w2s(allPts[allPts.length-1].x,allPts[allPts.length-1].y);
+        ctx.lineTo(sxF,syF); ctx.stroke();
+      }
+    } else {
+      const[sx0,sy0]=w2s(allPts[0].x,allPts[0].y); ctx.moveTo(sx0,sy0);
+      for(let i=1;i<allPts.length;i++){const[sx,sy]=w2s(allPts[i].x,allPts[i].y);ctx.lineTo(sx,sy);}
+      ctx.stroke();
+    }
+  }
+
+  // Points
+  points.forEach((p,i)=>{
+    const[sx,sy]=w2s(p.x,p.y);
+    ctx.fillStyle=i===0?'#00c96e':'#e03030';
+    ctx.strokeStyle='#0a0a0a'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(sx,sy,i===0?7:5,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle='#888'; ctx.font=`10px 'Share Tech Mono'`;
+    ctx.fillText(`P${i+1}`,sx+8,sy-5);
+  });
+
+  // Current position cursor
+  if (curX!==null) {
+    const[cx,cy]=w2s(curX,curY);
+    ctx.strokeStyle='#f5c518'; ctx.lineWidth=1; ctx.setLineDash([4,4]);
+    ctx.beginPath();ctx.moveTo(cx-12,cy);ctx.lineTo(cx+12,cy);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(cx,cy-12);ctx.lineTo(cx,cy+12);ctx.stroke();
+    ctx.setLineDash([]); ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.arc(cx,cy,4,0,Math.PI*2);ctx.stroke();
+    if(points.length){
+      const last=points[points.length-1];
+      const[lx,ly]=w2s(last.x,last.y);
+      ctx.strokeStyle='rgba(245,197,24,0.25)'; ctx.lineWidth=1; ctx.setLineDash([3,6]);
+      ctx.beginPath();ctx.moveTo(lx,ly);ctx.lineTo(cx,cy);ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+}
+
+// ── G-Code generation ─────────────────────────────────────────────────────────
+function buildGcode() {
+  const feed = parseFloat(document.getElementById('feedRate').value)||1000;
+  const R    = parseFloat(document.getElementById('filletR').value)||5;
+  const allPts = closePath ? [...points, points[0]] : [...points];
+  const lines = [];
+
+  lines.push('; OTO Torch Trace — offroadtoyoutfitters.com');
+  lines.push(`; Mode: ${mode} | Points: ${points.length} | Feed: ${feed}mm/min`);
+  lines.push(`; Generated: ${new Date().toLocaleString()}`);
+  lines.push('');
+  lines.push('G21 G90 G17');
+  lines.push(`G0 X${points[0].x.toFixed(3)} Y${points[0].y.toFixed(3)}`);
+  lines.push('');
+
+  if (mode==='lines') {
+    for(let i=1;i<allPts.length;i++) lines.push(`G1 X${allPts[i].x.toFixed(3)} Y${allPts[i].y.toFixed(3)} F${feed}`);
+  } else if (mode==='spline') {
+    for(let i=1;i<allPts.length-1;i++){
+      const prev=allPts[i-1],curr=allPts[i],next=allPts[i+1];
+      for(let t=0;t<=1;t+=0.05){
+        const bx=(1-t)*(1-t)*prev.x+2*(1-t)*t*curr.x+t*t*((curr.x+next.x)/2);
+        const by=(1-t)*(1-t)*prev.y+2*(1-t)*t*curr.y+t*t*((curr.y+next.y)/2);
+        lines.push(`G1 X${bx.toFixed(3)} Y${by.toFixed(3)} F${feed}`);
+      }
+    }
+    lines.push(`G1 X${allPts[allPts.length-1].x.toFixed(3)} Y${allPts[allPts.length-1].y.toFixed(3)} F${feed}`);
+  } else if (mode==='fillet') {
+    const n=points.length;
+    const wrapped = closePath ? [points[n-1],...points,points[0],points[1]] : allPts;
+    const si=closePath?1:1, ei=closePath?n+1:allPts.length-1;
+    if(closePath&&n>=3){
+      const m0x=((points[n-1].x+points[0].x)/2).toFixed(3);
+      const m0y=((points[n-1].y+points[0].y)/2).toFixed(3);
+      lines.push(`G0 X${m0x} Y${m0y}`);
+    }
+    for(let i=si;i<=ei;i++){
+      const p=wrapped[i],prev=wrapped[i-1],next=wrapped[i+1];
+      if(!next){lines.push(`G1 X${p.x.toFixed(3)} Y${p.y.toFixed(3)} F${feed}`);continue;}
+      const d1x=p.x-prev.x,d1y=p.y-prev.y,d2x=next.x-p.x,d2y=next.y-p.y;
+      const l1=Math.sqrt(d1x*d1x+d1y*d1y),l2=Math.sqrt(d2x*d2x+d2y*d2y);
+      if(l1<0.001||l2<0.001){lines.push(`G1 X${p.x.toFixed(3)} Y${p.y.toFixed(3)} F${feed}`);continue;}
+      const u1x=d1x/l1,u1y=d1y/l1,u2x=d2x/l2,u2y=d2y/l2;
+      const dot=Math.max(-1,Math.min(1,u1x*u2x+u1y*u2y));
+      const ang=Math.acos(dot);
+      if(ang<0.01){lines.push(`G1 X${p.x.toFixed(3)} Y${p.y.toFixed(3)} F${feed}`);continue;}
+      const safeR=Math.min(R,l1*0.45,l2*0.45);
+      const trim=safeR/Math.tan(ang/2);
+      const asx=p.x-u1x*trim,asy=p.y-u1y*trim;
+      const aex=p.x+u2x*trim,aey=p.y+u2y*trim;
+      const cross=u1x*u2y-u1y*u2x;
+      const px2=cross>0?u1y:-u1y,py2=cross>0?-u1x:u1x;
+      lines.push(`G1 X${asx.toFixed(3)} Y${asy.toFixed(3)} F${feed}`);
+      lines.push(`${cross>0?'G2':'G3'} X${aex.toFixed(3)} Y${aey.toFixed(3)} I${(px2*safeR).toFixed(3)} J${(py2*safeR).toFixed(3)} F${feed}`);
+    }
+    if(!closePath) lines.push(`G1 X${allPts[allPts.length-1].x.toFixed(3)} Y${allPts[allPts.length-1].y.toFixed(3)} F${feed}`);
+    if(closePath&&n>=3){const m0x=((points[n-1].x+points[0].x)/2).toFixed(3),m0y=((points[n-1].y+points[0].y)/2).toFixed(3);lines.push(`G1 X${m0x} Y${m0y} F${feed}`);}
+  }
+
+  lines.push(''); lines.push('M5'); lines.push('G0 X0 Y0'); lines.push('M30');
+  return lines.join('\n');
+}
+
+function generateGcode() {
+  if(points.length<2) return;
+  const gcode=buildGcode();
+  showGcodeStrip(gcode);
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([gcode],{type:'text/plain'}));
+  a.download=`oto-digitizer-${Date.now()}.nc`;
+  a.click();
+}
+
+function showGcodeStrip(gcode) {
+  const strip=document.getElementById('gcodeStrip');
+  strip.classList.add('visible');
+  const lines=gcode.split('\n').slice(0,15);
+  strip.innerHTML=lines.map(l=>l.startsWith(';')?`<span class="gc">${l}</span>`:l?`<span class="gl">${l}</span>`:'<br>').join('<br>');
+}
+
+// ── DXF Export ────────────────────────────────────────────────────────────────
+function generateDxf() {
+  if(points.length<2) return;
+  const R=parseFloat(document.getElementById('filletR').value)||5;
+  const allPts=closePath?[...points,points[0]]:[...points];
+  const ents=[];
+
+  if(mode==='lines'){
+    for(let i=0;i<allPts.length-1;i++){
+      const p=allPts[i],q=allPts[i+1];
+      ents.push(`  0\nLINE\n  8\n0\n 10\n${p.x.toFixed(4)}\n 20\n${p.y.toFixed(4)}\n 30\n0.0\n 11\n${q.x.toFixed(4)}\n 21\n${q.y.toFixed(4)}\n 31\n0.0`);
+    }
+  } else if(mode==='spline'){
+    const n=points.length,deg=Math.min(3,n-1);
+    const knots=[];
+    for(let i=0;i<=deg;i++) knots.push(0);
+    for(let i=1;i<n-deg;i++) knots.push(i);
+    for(let i=0;i<=deg;i++) knots.push(n-deg);
+    let sp=`  0\nSPLINE\n  8\n0\n 70\n8\n 71\n${deg}\n 72\n${knots.length}\n 73\n${n}\n 74\n0\n`;
+    knots.forEach(k=>{sp+=` 40\n${k}.0\n`;});
+    points.forEach(p=>{sp+=` 10\n${p.x.toFixed(4)}\n 20\n${p.y.toFixed(4)}\n 30\n0.0\n`;});
+    ents.push(sp);
+  } else if(mode==='fillet'){
+    for(let i=0;i<allPts.length-1;i++){
+      const prev=allPts[i],curr=allPts[i+1],next=allPts[i+2];
+      if(!next){ents.push(`  0\nLINE\n  8\n0\n 10\n${prev.x.toFixed(4)}\n 20\n${prev.y.toFixed(4)}\n 30\n0.0\n 11\n${curr.x.toFixed(4)}\n 21\n${curr.y.toFixed(4)}\n 31\n0.0`);continue;}
+      const d1x=curr.x-prev.x,d1y=curr.y-prev.y,d2x=next.x-curr.x,d2y=next.y-curr.y;
+      const l1=Math.sqrt(d1x*d1x+d1y*d1y),l2=Math.sqrt(d2x*d2x+d2y*d2y);
+      if(l1<0.001||l2<0.001) continue;
+      const u1x=d1x/l1,u1y=d1y/l1,u2x=d2x/l2,u2y=d2y/l2;
+      const dot=Math.max(-1,Math.min(1,u1x*u2x+u1y*u2y));
+      const ang=Math.acos(dot);
+      if(ang<0.01){ents.push(`  0\nLINE\n  8\n0\n 10\n${prev.x.toFixed(4)}\n 20\n${prev.y.toFixed(4)}\n 30\n0.0\n 11\n${curr.x.toFixed(4)}\n 21\n${curr.y.toFixed(4)}\n 31\n0.0`);continue;}
+      const safeR=Math.min(R,l1*0.45,l2*0.45),trim=safeR/Math.tan(ang/2);
+      const asx=curr.x-u1x*trim,asy=curr.y-u1y*trim,aex=curr.x+u2x*trim,aey=curr.y+u2y*trim;
+      const cross=u1x*u2y-u1y*u2x;
+      const px2=cross>0?u1y:-u1y,py2=cross>0?-u1x:u1x;
+      const acx=asx+px2*safeR,acy=asy+py2*safeR;
+      const sa=((Math.atan2(asy-acy,asx-acx)*180/Math.PI)%360+360)%360;
+      const ea=((Math.atan2(aey-acy,aex-acx)*180/Math.PI)%360+360)%360;
+      ents.push(`  0\nLINE\n  8\n0\n 10\n${prev.x.toFixed(4)}\n 20\n${prev.y.toFixed(4)}\n 30\n0.0\n 11\n${asx.toFixed(4)}\n 21\n${asy.toFixed(4)}\n 31\n0.0`);
+      ents.push(`  0\nARC\n  8\n0\n 10\n${acx.toFixed(4)}\n 20\n${acy.toFixed(4)}\n 30\n0.0\n 40\n${safeR.toFixed(4)}\n 50\n${(cross>0?sa:ea).toFixed(4)}\n 51\n${(cross>0?ea:sa).toFixed(4)}`);
+    }
+  }
+
+  const dxf=['  0','SECTION','  2','HEADER','  0','ENDSEC','  0','SECTION','  2','ENTITIES',...ents.flatMap(e=>e.split('\n')),'  0','ENDSEC','  0','EOF'].join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([dxf],{type:'application/dxf'}));
+  a.download=`oto-digitizer-${Date.now()}.dxf`;
+  a.click();
+}
+
+// ── Keyboard shortcuts ────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (document.activeElement === document.getElementById('conInput')) return;
+  if (e.code==='Space' && (connected||demoActive) && curX!==null) { e.preventDefault(); plotPoint(); }
+  if (e.code==='KeyZ' && e.ctrlKey) { e.preventDefault(); undoLast(); }
+  if (connected) {
+    if (e.code==='ArrowUp')    { e.preventDefault(); jog(0,1); }
+    if (e.code==='ArrowDown')  { e.preventDefault(); jog(0,-1); }
+    if (e.code==='ArrowLeft')  { e.preventDefault(); jog(-1,0); }
+    if (e.code==='ArrowRight') { e.preventDefault(); jog(1,0); }
+    if (e.code==='Escape')     { e.preventDefault(); obCmd('\x85'); }
+  }
+});
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+setMode('lines');
+updatePointsList();
+drawCanvas();
+</script>
+</body>
+</html>

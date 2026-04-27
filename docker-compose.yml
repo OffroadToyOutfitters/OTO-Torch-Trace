@@ -1,0 +1,29 @@
+version: "3.9"
+services:
+  oto-torch-trace:
+    build: .
+    container_name: oto-torch-trace
+    restart: unless-stopped
+    ports:
+      - "${HOST_PORT:-8080}:80"
+    environment:
+      - TZ=${TZ:-America/Los_Angeles}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+    # Uncomment for Traefik deployment:
+    # labels:
+    #   - "traefik.enable=true"
+    #   - "traefik.http.routers.oto-torch-trace.rule=Host(`${SUBDOMAIN}.${DOMAIN}`)"
+    #   - "traefik.http.routers.oto-torch-trace.entrypoints=websecure"
+    #   - "traefik.http.routers.oto-torch-trace.tls.certresolver=letsencrypt"
+    #   - "traefik.http.services.oto-torch-trace.loadbalancer.server.port=80"
+    # networks:
+    #   - traefik-public
+
+# networks:
+#   traefik-public:
+#     external: true
